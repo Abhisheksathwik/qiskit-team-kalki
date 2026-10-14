@@ -19,6 +19,8 @@ This checklist maps the QuantumClassify Lab presentation brief to repository fea
 - [x] Report download (Markdown), metric CSV export, local history JSON export.
 - [x] Configurable dashboard with Overview, VQC, Quantum Kernel, Report & History, and Methodology tabs.
 - [x] Bounded sample sizes to keep simulator experiments appropriate for a demo.
+- [x] Independent shot controls for VQC and quantum kernel.
+- [x] Ideal and configurable Aer depolarizing-noise simulation for both quantum models; noise setting is recorded in reports.
 - [x] Local automated tests and GitHub Actions compile/test checks.
 - [x] Installation, testing, architecture, and deployment instructions.
 
@@ -36,8 +38,8 @@ These are extension items described in the presentation as future work or option
 
 - [ ] Real IBM Quantum hardware backend execution (requires user-provided IBM Quantum credentials and a compatible backend).
 - [ ] Hardware-aware transpilation and backend-specific validation.
-- [ ] An explicit configurable noisy-channel model applied consistently to both quantum classifiers.
-- [ ] Shot-noise / noise-strength sweeps and statistical comparison against ideal simulation.
+
+- [ ] Automated sweeps across noise strengths and statistical comparison against ideal simulation.
 - [ ] Automated hyperparameter, feature-map, and ansatz sweeps.
 - [ ] Persistent database or cloud object store for history on ephemeral hosting.
 - [ ] Publicly deployed Streamlit app (needs a deployment account and deployment action).
