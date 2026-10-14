@@ -1,6 +1,11 @@
 .venv/
 __pycache__/
-*.pyc
-.streamlit/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 .DS_Store
 results/*.csv
+results/*.json
+results/*.tmp
