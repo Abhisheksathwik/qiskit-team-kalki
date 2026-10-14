@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 import numpy as np
 
-from src.quantum_backend import build_sampler
+from src.quantum_backend import build_sampler, suppress_aer_compatibility_warnings
 
 
 def train_vqc(
@@ -33,21 +33,21 @@ def train_vqc(
     else:
         raise ValueError("optimizer_name must be COBYLA or SPSA")
 
-    sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
-    model = VQC(
-        sampler=sampler,
-        feature_map=feature_map,
-        ansatz=ansatz,
-        optimizer=optimizer,
-        callback=callback,
-    )
-
-    start = time.perf_counter()
-    model.fit(X_train_q, np.asarray(y_train, dtype=int))
-    train_seconds = time.perf_counter() - start
-    start = time.perf_counter()
-    predictions = np.asarray(model.predict(X_test_q)).astype(int).ravel()
-    inference_seconds = time.perf_counter() - start
+    with suppress_aer_compatibility_warnings():
+        sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
+        model = VQC(
+            sampler=sampler,
+            feature_map=feature_map,
+            ansatz=ansatz,
+            optimizer=optimizer,
+            callback=callback,
+        )
+        start = time.perf_counter()
+        model.fit(X_train_q, np.asarray(y_train, dtype=int))
+        train_seconds = time.perf_counter() - start
+        start = time.perf_counter()
+        predictions = np.asarray(model.predict(X_test_q)).astype(int).ravel()
+        inference_seconds = time.perf_counter() - start
 
     return {
         "model": model,
