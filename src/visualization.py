@@ -39,11 +39,11 @@ def confusion_matrix_plot(y_true, predictions, title):
     return fig
 
 
-def decision_boundary(predict_fn, X_train, y_train, X_test, y_test, title):
+def decision_boundary(predict_fn, X_train, y_train, X_test, y_test, title, resolution=70):
     """Draw a 2-D slice; predict_fn accepts a (n, 2) grid and returns labels."""
     X = np.vstack((X_train[:, :2], X_test[:, :2]))
-    x0 = np.linspace(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5, 90)
-    x1 = np.linspace(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5, 90)
+    x0 = np.linspace(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5, int(resolution))
+    x1 = np.linspace(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5, int(resolution))
     xx, yy = np.meshgrid(x0, x1)
     grid = np.c_[xx.ravel(), yy.ravel()]
     zz = np.asarray(predict_fn(grid)).reshape(xx.shape)
