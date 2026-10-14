@@ -6,7 +6,7 @@ import numpy as np
 
 
 def train_quantum_kernel(
-    X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=100, shots=1024,
+    X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=105, shots=1024,
 ):
     from qiskit.circuit.library import zz_feature_map
     from qiskit_aer.primitives import SamplerV2
