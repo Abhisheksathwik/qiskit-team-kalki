@@ -47,6 +47,20 @@ If PowerShell blocks environment activation, use Ubuntu/WSL or activate the virt
 
 Streamlit prints a local URL, normally http://localhost:8501.
 
+## One-command launchers
+
+- Windows PowerShell: run `./run.ps1` from the repository root.
+- Ubuntu/WSL: run `chmod +x run.sh && ./run.sh`.
+
+## Docker
+
+Build and start the application from the repository root:
+
+    docker build -t quantumclassify-lab .
+    docker run --rm -p 8501:8501 quantumclassify-lab
+
+Then open http://localhost:8501. The container writes experiment history locally inside the container; download reports you need to keep.
+
 ## Run tests
 
     pytest -q
