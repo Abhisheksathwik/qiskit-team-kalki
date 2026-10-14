@@ -7,9 +7,13 @@ import warnings
 
 @contextmanager
 def suppress_aer_compatibility_warnings():
-    \"\"\"Hide known Aer/Qiskit deprecation chatter during simulator execution only.\"\"\"
+    """Hide known Aer/Qiskit deprecation chatter during simulator execution only."""
     with warnings.catch_warnings():
-        warnings.filterwarnings(\"ignore\", category=DeprecationWarning, module=r\"qiskit_aer(?:\\.|$)\")
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            module=r"qiskit_aer(?:\.|$)",
+        )
         yield
 
 
