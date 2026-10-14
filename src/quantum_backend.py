@@ -1,6 +1,17 @@
 """Shared Qiskit Aer V2 sampler construction for ideal/noisy simulations."""
 from __future__ import annotations
 
+from contextlib import contextmanager
+import warnings
+
+
+@contextmanager
+def suppress_aer_compatibility_warnings():
+    \"\"\"Hide known Aer/Qiskit deprecation chatter during simulator execution only.\"\"\"
+    with warnings.catch_warnings():
+        warnings.filterwarnings(\"ignore\", category=DeprecationWarning, module=r\"qiskit_aer(?:\\.|$)\")
+        yield
+
 
 def build_sampler(*, shots: int = 1024, seed: int = 42, noise_strength: float = 0.0):
     """Create a seeded V2 sampler, optionally adding depolarizing gate noise.
