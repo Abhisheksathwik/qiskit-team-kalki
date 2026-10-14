@@ -278,13 +278,13 @@ insights = build_insights(primary_models, data)
 with tabs[0]:
     st.subheader("Experiment scoreboard")
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Dataset", CONFIG["dataset"])
+    m1.metric("Dataset", bundle["config"]["dataset"])
     m2.metric("Train samples", data.train_size)
     m3.metric("Test samples", data.test_count)
     m4.metric("Qubits", data.n_qubits)
     display_cols = ["Model", "Accuracy", "Precision", "Recall", "F1 Score", "Training Time (s)", "Inference Time (s)", "Kernel Build Time (s)"]
     # Display means and standard deviations when the repeat option is enabled.
-    if CONFIG["repeats"] > 1:
+    if bundle["config"]["repeats"] > 1:
         st.caption("Values below are mean ± sample standard deviation across independent seeds.")
         st.dataframe(agg, use_container_width=True)
     else:
@@ -327,7 +327,7 @@ with tabs[0]:
         with column:
             try:
                 # Quantum-kernel boundary evaluation is expensive; use a coarser grid for this view.
-                resolution = 22 if name == "Quantum Kernel + SVM" else 70
+                resolution = 14 if name == "Quantum Kernel + SVM" else 70
                 st.pyplot(decision_boundary(
                     make_predictor(name, result), data.X_train, data.y_train,
                     data.X_test, data.y_test, name, resolution=resolution
