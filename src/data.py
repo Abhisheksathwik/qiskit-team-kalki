@@ -41,23 +41,13 @@ def _two_moons_features(n_samples: int, seed: int, n_features: int):
     X, y = make_moons(n_samples=n_samples, noise=0.18, random_state=seed)
     names = ["Moon x", "Moon y"]
     if n_features == 4:
-        # Deterministic feature expansion; it uses only each row's features.
         X = np.column_stack((X, X[:, 0] * X[:, 1], X[:, 0] ** 2 - X[:, 1] ** 2))
         names.extend(["x × y", "x² − y²"])
     return X, y, names
 
 
-def load_data(
-    name: str = "Two Moons",
-    samples: int = 80,
-    test_size: float = 0.2,
-    seed: int = 42,
-    n_qubits: int = 2,
-) -> PreparedData:
-    """Prepare one shared stratified split; fit all transforms on training data only.
-
-    The number of retained features always equals n_qubits (2 or 4).
-    """
+def load_data(name: str = "Two Moons", samples: int = 80, test_size: float = 0.2, seed: int = 42, n_qubits: int = 2) -> PreparedData:
+    """Prepare one shared stratified split; fit every transform on training data only."""
     if n_qubits not in (2, 4):
         raise ValueError("n_qubits must be either 2 or 4")
     if not 0.1 <= test_size <= 0.4:
@@ -69,17 +59,15 @@ def load_data(
     if name == "Two Moons":
         X, y, names = _two_moons_features(samples, seed, n_qubits)
     elif name in ("Breast Cancer", "Breast Cancer Wisconsin"):
-        data = load_breast_cancer()
-        X, y = data.data, data.target
-        names = list(data.feature_names)
+        breast = load_breast_cancer()
+        X, y = breast.data, breast.target
+        if samples < len(y):
+            X, _, y, _ = train_test_split(X, y, train_size=samples, stratify=y, random_state=seed)
+        names = list(breast.feature_names)
     else:
         raise ValueError(f"Unsupported dataset: {name}")
 
-    # The test set is not used to fit feature selection, scaling, or angle mapping.
-    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=y, random_state=seed
-    )
-
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y, test_size=test_size, stratify=y, random_state=seed)
     if name != "Two Moons":
         selector = SelectKBest(score_func=f_classif, k=n_qubits)
         X_train_raw = selector.fit_transform(X_train_raw, y_train)
@@ -89,35 +77,14 @@ def load_data(
     standard_scaler = StandardScaler()
     X_train = standard_scaler.fit_transform(X_train_raw)
     X_test = standard_scaler.transform(X_test_raw)
-
-    # Fit angle scaling on training only and constrain held-out rotations to [0, pi].
     angle_scaler = MinMaxScaler(feature_range=(0.0, np.pi), clip=True)
     X_train_q = angle_scaler.fit_transform(X_train)
     X_test_q = angle_scaler.transform(X_test)
 
     return PreparedData(
-        dataset_name=name,
-        n_qubits=n_qubits,
-        test_size=test_size,
-        seed=seed,
-        X_train=X_train,
-        X_test=X_test,
-        X_train_q=X_train_q,
-        X_test_q=X_test_q,
-        y_train=np.asarray(y_train, dtype=int),
-        y_test=np.asarray(y_test, dtype=int),
-        feature_names=names,
-        angle_scaler=angle_scaler,
-        standard_scaler=standard_scaler,
+        dataset_name=name, n_qubits=n_qubits, test_size=test_size, seed=seed,
+        X_train=X_train, X_test=X_test, X_train_q=X_train_q, X_test_q=X_test_q,
+        y_train=np.asarray(y_train, dtype=int), y_test=np.asarray(y_test, dtype=int),
+        feature_names=names, angle_scaler=angle_scaler, standard_scaler=standard_scaler,
         selector=selector,
     )
-
-
-def expand_2d_grid(grid: np.ndarray, reference: np.ndarray) -> np.ndarray:
-    """Build full-dimensional inputs for a 2-D boundary plot, fixing other features at 0."""
-    grid = np.asarray(grid, dtype=float)
-    if reference.shape[1] <= 2:
-        return grid
-    result = np.zeros((len(grid), reference.shape[1]), dtype=float)
-    result[:, :2] = grid[:, :2]
-    return result
