@@ -65,6 +65,8 @@ with st.sidebar:
     test_fraction = st.slider("Held-out test fraction", min_value=0.15, max_value=0.30, value=0.20, step=0.05)
     qubits = st.radio("Qubits / retained features", [2, 4], horizontal=True)
     depth = st.slider("VQC ansatz layers", min_value=1, max_value=3, value=1)
+    feature_map_choice = st.selectbox("Quantum feature map", ["ZZ entangling", "Z-only"])
+    ansatz_choice = st.selectbox("VQC trainable ansatz", ["Real Amplitudes", "Efficient SU(2)"])
     optimizer_name = st.selectbox("Classical optimizer", ["COBYLA", "SPSA"])
     optimizer_iterations = st.slider("Optimizer iterations", min_value=10, max_value=80, value=30, step=10)
     shots = st.select_slider("Measurement shots (VQC)", options=[256, 512, 1024, 2048], value=1024)
@@ -86,6 +88,11 @@ with st.sidebar:
     run_classical = st.checkbox("Classical RBF SVM", value=True)
     run_vqc = st.checkbox("Hybrid VQC", value=True)
     run_kernel = st.checkbox("Quantum Kernel + SVM", value=True)
+    enable_architecture_sweep = st.checkbox(
+        "Run architecture study (extra quantum runs)",
+        value=False,
+        help="Compares Z vs ZZ feature maps and two VQC ansatz designs on the primary seed. Adds up to six small quantum runs."
+    )
     run_experiment = st.button("🚀 Run experiment", type="primary", use_container_width=True)
     st.caption("Quantum-kernel construction scales quadratically with training-set size. This demo caps total samples at 120.")
 
@@ -95,6 +102,9 @@ CONFIG = {
     "test_size": float(test_fraction),
     "qubits": int(qubits),
     "vqc_layers": int(depth),
+    "feature_map": feature_map_choice,
+    "ansatz": ansatz_choice,
+    "architecture_sweep": bool(enable_architecture_sweep),
     "optimizer": optimizer_name,
     "optimizer_iterations": int(optimizer_iterations),
     "shots": int(shots),
@@ -157,6 +167,8 @@ def _fit_seed(cfg, seed):
                 maxiter=cfg["optimizer_iterations"], reps=cfg["vqc_layers"],
                 optimizer_name=cfg["optimizer"], shots=cfg["shots"], seed=seed,
                 noise_strength=cfg["noise_strength"],
+                feature_map_name=cfg["feature_map"],
+                ansatz_name=cfg["ansatz"],
             )
             outputs["Hybrid VQC"] = {
                 **result,
@@ -172,6 +184,7 @@ def _fit_seed(cfg, seed):
                 data.X_train_q, data.y_train, data.X_test_q, reps=1, seed=seed,
                 max_train_samples=105, shots=cfg["kernel_shots"],
                 noise_strength=cfg["noise_strength"],
+                feature_map_name=cfg["feature_map"],
             )
             outputs["Quantum Kernel + SVM"] = {
                 **result,
@@ -189,6 +202,7 @@ if run_experiment:
     else:
         all_runs = []
         rows = []
+        architecture_rows = []
         with st.status("Running benchmark", expanded=True) as status:
             for repeat_index in range(CONFIG["repeats"]):
                 seed = CONFIG["seed"] + repeat_index * 17
@@ -199,12 +213,17 @@ if run_experiment:
                     rows.append(_jsonable_row(model_name, model_result["metrics"], model_result, seed, CONFIG))
                 for model_name, error in run_result["failures"].items():
                     st.warning(f"{model_name} did not complete for seed {seed}: {error}")
+            if CONFIG["architecture_sweep"] and (CONFIG["models"]["Hybrid VQC"] or CONFIG["models"]["Quantum Kernel + SVM"]):
+                st.write("Running architecture study on the primary seed…")
+                from src.architecture import run_architecture_sweep
+                architecture_rows = run_architecture_sweep(all_runs[0]["data"], CONFIG)
             status.update(label="Experiment finished", state="complete", expanded=False)
 
         st.session_state["qcl_run_bundle"] = {
             "config": CONFIG,
             "runs": all_runs,
             "rows": rows,
+            "architecture_sweep": architecture_rows,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         summary = pd.DataFrame(rows)
@@ -213,6 +232,7 @@ if run_experiment:
             "created_at": st.session_state["qcl_run_bundle"]["created_at"],
             "config": CONFIG,
             "summary": summary.to_dict(orient="records"),
+            "architecture_sweep": architecture_rows,
             "insights": insights,
         }
         save_history(record)
@@ -421,6 +441,26 @@ with tabs[3]:
     st.subheader("Experiment Insight Engine")
     for sentence in insights:
         st.markdown(f"- {sentence}")
+    if bundle.get("architecture_sweep"):
+        st.markdown("#### Architecture study")
+        sweep_frame = pd.DataFrame(bundle["architecture_sweep"])
+        completed_sweep = sweep_frame[sweep_frame["Status"] == "ok"].copy()
+        if not completed_sweep.empty:
+            completed_sweep = completed_sweep.sort_values("F1 Score", ascending=False)
+            st.caption("Exploratory candidates are evaluated on the same primary-seed split. The sweep is intentionally small, not exhaustive tuning.")
+            st.dataframe(completed_sweep, use_container_width=True)
+            chart_data = completed_sweep.set_index("Configuration")[["F1 Score"]]
+            st.bar_chart(chart_data)
+        failed_sweep = sweep_frame[sweep_frame["Status"] != "ok"]
+        if not failed_sweep.empty:
+            st.warning("Some architecture candidates failed; error details are included below.")
+            st.dataframe(failed_sweep[["Configuration", "Status", "Error"]], use_container_width=True)
+        st.download_button(
+            "Download architecture sweep (CSV)",
+            data=sweep_frame.to_csv(index=False),
+            file_name="quantumclassify_architecture_sweep.csv",
+            mime="text/csv",
+        )
     st.markdown("#### Reproducibility record")
     st.json({
         "configuration": bundle["config"],
