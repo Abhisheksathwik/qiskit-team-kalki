@@ -4,22 +4,21 @@ from __future__ import annotations
 import time
 import numpy as np
 
+from src.circuits import build_ansatz, build_feature_map
 from src.quantum_backend import build_sampler, suppress_aer_compatibility_warnings
 
 
 def train_vqc(
     X_train_q, y_train, X_test_q, *, maxiter=40, reps=1,
     optimizer_name="COBYLA", shots=1024, seed=42, noise_strength=0.0,
+    feature_map_name="ZZ entangling", ansatz_name="Real Amplitudes",
 ):
-    from qiskit.circuit.library import real_amplitudes, zz_feature_map
     from qiskit_machine_learning.algorithms import VQC
     from qiskit_machine_learning.optimizers import COBYLA, SPSA
 
     n_qubits = int(X_train_q.shape[1])
-    if n_qubits not in (2, 4):
-        raise ValueError("VQC currently supports 2 or 4 qubits")
-    feature_map = zz_feature_map(feature_dimension=n_qubits, reps=1, entanglement="linear")
-    ansatz = real_amplitudes(num_qubits=n_qubits, reps=int(reps), entanglement="linear")
+    feature_map = build_feature_map(n_qubits, feature_map_name)
+    ansatz = build_ansatz(n_qubits, int(reps), ansatz_name)
     history = []
 
     def callback(weights, objective_value):
@@ -62,4 +61,6 @@ def train_vqc(
         "reps": int(reps),
         "optimizer": optimizer_key,
         "noise_strength": float(noise_strength),
+        "feature_map_name": feature_map_name,
+        "ansatz_name": ansatz_name,
     }
