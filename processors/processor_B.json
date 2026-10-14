@@ -1,0 +1,15 @@
+{
+  "name": "Processor B",
+  "processor_id": "B",
+  "num_qubits": 9,
+  "design_rationale": "A connected sparse nine-node graph with a perimeter path and three long-range cross-links. The extra connectivity is intended to reduce routing overhead for interactions that are distant on Processor A; the same synthetic gate and readout error rates are used to isolate topology effects.",
+  "coupling_edges": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 0], [0, 4], [1, 6], [2, 7]],
+  "basis_gates": ["rz", "sx", "x", "cx"],
+  "transpilation": {"optimization_level": 1, "seed_transpiler": 42},
+  "shots": 4096,
+  "noise": {
+    "one_qubit_depolarizing_probability": 0.001,
+    "cx_depolarizing_probability": 0.005,
+    "readout_error_probability": 0.01
+  }
+}

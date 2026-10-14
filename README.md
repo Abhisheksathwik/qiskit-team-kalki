@@ -1,31 +1,47 @@
-# ⚛️ QuantumClassify Lab
+# QuantumClassify Lab — Qiskit Fall Fest 2026, Phase 1
 
-**Qiskit Fall Fest · Quantum Machine Learning benchmark**
+**Selected official problem statement: PS-Q1 — Variational Quantum Classifier (VQC).**
 
-An interactive research dashboard comparing a classical RBF Support Vector Machine (SVM), a Hybrid Variational Quantum Classifier (VQC), and a fidelity quantum-kernel SVM on a shared, stratified held-out test set.
+QuantumClassify Lab retains its three separate models:
+1. Classical RBF-SVM baseline.
+2. Hybrid variational quantum classifier (VQC).
+3. Fidelity quantum-kernel SVM.
 
-> This is an experimental comparison platform. It does not assume quantum advantage, and a small simulator benchmark cannot establish hardware speedup.
+The existing Streamlit app continues to offer all three models. The formal Phase 1 benchmark adds the required processor co-design workflow: a four-qubit PS-Q1 VQC is trained and evaluated using the same data split and seed on the five-qubit Processor A and nine-qubit Processor B, then compared with the CPU-only RBF-SVM baseline. The quantum-kernel SVM remains available as a supplementary dashboard experiment; it is not claimed as the selected official problem statement.
 
-## Core features
+This is a simulator study, not a real IBM Quantum hardware submission. It does not assume or claim quantum advantage.
 
-- Two Moons and Breast Cancer Wisconsin binary classification datasets.
-- Compact 2- and 4-feature / qubit experiments.
-- Leakage-safe scaling and training-fitted feature selection.
-- Three separate pipelines: classical RBF SVM, trainable VQC, and quantum kernel + classical SVM.
-- Adjustable VQC ansatz layers and design, quantum feature map, optimizer, iteration count, independent shot counts, ideal/noisy simulator mode, seed, and repeated runs.
-- Optional architecture study across Z-only / ZZ-entangling feature maps and Real Amplitudes / Efficient SU(2) ansatz designs, evaluated on a fixed primary-seed split.
-- Accuracy, precision, recall, F1, confusion matrices, training time, inference time, and quantum-kernel build time.
-- Visuals: score comparison, confusion matrices, decision boundaries, VQC optimization loss, quantum-kernel fidelity heatmap, circuit diagrams, and training-time chart.
-- Ideal shot-based and optional depolarizing-noise simulation for both quantum pipelines, with independent VQC/kernel shot counts; results record the selected noise settings.
-- Evidence-based findings and a downloadable Markdown experiment report.
-- Detailed metrics CSV, saved history JSON, and session-cached experiment results.
-- GitHub Actions CI and automated tests.
+## Official PS-Q1 experiment
 
-## Technology
+The Phase 1 guide specifies a four-feature, binary synthetic classification task with 200 samples, three informative features, and an 80/20 split. `src/problem.py` implements this generated locally with `random_state=42` by default. It explicitly sets `n_redundant=0`: scikit-learn otherwise defaults to two redundant features, which would conflict with `n_features=4` and `n_informative=3`.
 
-Python 3.11, Qiskit, Qiskit Aer, Qiskit Machine Learning, scikit-learn, NumPy, pandas, Matplotlib, Seaborn, Streamlit, and pytest.
+The test split remains held out. Standardization and angle scaling are fitted on the training split only. The quantum features are angle encoded on four logical qubits.
 
-## Quick start — Windows PowerShell
+The benchmark executes:
+- CPU classical RBF-SVM baseline on the same held-out split.
+- VQC under ideal shot-based simulation for reference.
+- The same VQC configuration on Processor A and Processor B using the guide's synthetic noise model.
+
+The same seed, feature map, ansatz, optimizer, training split and shot count are used for Processor A and B. Processor-specific noise settings are identical; only the physical graph and routing target differ.
+
+## Participant-defined processor architectures
+
+Processor A uses 5 physical qubits on a connected ring-with-branch graph with 5 undirected coupling edges. Processor B uses 9 physical qubits on a connected sparse graph with a perimeter plus 3 cross-links (12 undirected edges). The topology is intentionally defined in the repository rather than supplied as a pre-compiled JSON.
+
+Both processor JSON files specify:
+- Native basis: `rz`, `sx`, `x`, `cx`.
+- Transpilation optimization level: 1.
+- Transpiler seed: 42.
+- Default shots: 4096.
+- One-qubit depolarizing probability: 0.001.
+- CX depolarizing probability: 0.005.
+- Readout bit-flip probability: 0.01.
+
+The noise model is built in `src/processors.py` and applied to both processors at identical rates. `src/routing.py` compiles a representative circuit with and without the topology constraint. `src/metrics.py` records logical/compiled depth, CX count, routing SWAP count, CX overhead, and a measured ideal/noisy output-distribution fidelity. That last quantity is the squared Bhattacharyya coefficient between measurement distributions; it is **not** quantum state fidelity or measured hardware fidelity.
+
+## Run the project
+
+### 1. Create an environment (Windows PowerShell)
 
     git clone https://github.com/Abhisheksathwik/qiskit-team-kalki.git
     cd qiskit-team-kalki
@@ -33,114 +49,78 @@ Python 3.11, Qiskit, Qiskit Aer, Qiskit Machine Learning, scikit-learn, NumPy, p
     .venv\Scripts\Activate.ps1
     python -m pip install --upgrade pip
     pip install -r requirements.txt
+
+### 2. Launch the existing three-model dashboard
+
     streamlit run app.py
 
-If PowerShell blocks environment activation, use Ubuntu/WSL or activate the virtual environment through a different terminal.
+This interactive application still contains the classical RBF-SVM, VQC, and quantum-kernel SVM. It includes experiment visualizations, measured metrics, reports and exports.
 
-## Quick start — Ubuntu / WSL
+### 3. Run the official architecture benchmark
 
-    git clone https://github.com/Abhisheksathwik/qiskit-team-kalki.git
-    cd qiskit-team-kalki
-    python3.11 -m venv .venv
-    source .venv/bin/activate
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    streamlit run app.py
+Open `main.ipynb` in Jupyter and run cells from top to bottom, or run from the project root:
 
-Streamlit prints a local URL, normally http://localhost:8501.
+    python -m src.architecture_benchmark
 
-## One-command launchers
+The full official configuration uses 4096 shots and 20 COBYLA iterations. A low-shot/small-iteration run may be used only as a smoke test; restore the official shot count and record the actual configuration for the final submission. Quantum circuit simulation and VQC optimization may take significant time.
 
-- Windows PowerShell: run `./run.ps1` from the repository root.
-- Ubuntu/WSL: run `chmod +x run.sh && ./run.sh`.
+A successful run writes measured outputs to:
+- `results/tables/model_comparison.csv`
+- `results/tables/processor_architecture_comparison.csv`
+- `results/tables/benchmark_summary.json`
+- `results/figures/processor_coupling_graphs.png`
+- `results/figures/processor_metric_comparison.png`
+- `report.md`
 
-## Docker
+No numeric results are committed as examples. These files are generated when the experiment actually runs. Failed model runs are marked as failed; they are not filled with illustrative values.
 
-Build and start the application from the repository root:
+### 4. Validate
 
-    docker build -t quantumclassify-lab .
-    docker run --rm -p 8501:8501 quantumclassify-lab
-
-Then open http://localhost:8501. The container writes experiment history locally inside the container; download reports you need to keep.
-
-## Run tests
-
-    pytest -q
     python -m compileall -q app.py src tests
+    pytest -q
 
-GitHub Actions runs the compile and test checks on pushes and pull requests to main.
+GitHub Actions runs compilation and unit tests on pushes to `main`.
 
 ## Project layout
 
-    qiskit-team-kalki/
-    ├── app.py
-    ├── requirements.txt
-    ├── README.md
-    ├── .streamlit/config.toml
-    ├── src/
-    │   ├── data.py
-    │   ├── classical.py
-    │   ├── vqc.py
-    │   ├── quantum_kernel.py
-    │   ├── evaluation.py
-    │   ├── visualization.py
-    │   ├── reporting.py
-    │   └── history.py
-    ├── tests/
-    └── results/ (local experiment history; not committed)
+    app.py
+    main.ipynb
+    requirements.txt
+    processors/
+      processor_A.json
+      processor_B.json
+    src/
+      problem.py
+      processors.py
+      routing.py
+      metrics.py
+      architecture_benchmark.py
+      visualization.py
+      classical.py
+      vqc.py
+      quantum_kernel.py
+      evaluation.py
+      reporting.py
+      history.py
+    data/
+      raw/
+      processed/
+    results/
+      tables/
+      figures/
+    report.md
+    tests/
 
-## Model overview
+## Interpretation rules
 
-### 1. Classical RBF SVM
+- CPU baseline performance is not duplicated or labelled as Processor A/B accuracy.
+- Processor A/B accuracy comes from separate VQC runs using each configured topology and the same synthetic gate/readout noise rates.
+- Depth and CX counts are taken from actual transpiled circuits, not inferred from the logical circuit.
+- Routing overhead is reported as the explicit SWAP gates retained by the SWAP-visible routing pass and the additional CX count after native-basis compilation. These are related but not interchangeable metrics.
+- Output-distribution fidelity is measured on the same fixed representative circuit under ideal and noisy Aer simulation. It is not a hardware-calibrated fidelity.
+- A small, noisy simulation does not demonstrate quantum advantage or prove that a larger processor is faster.
+- Processor C and custom Processor D are not included, as the Phase 1 guide reserves them for Phase 2 finalists.
 
-A conventional scikit-learn SVC with an RBF kernel provides a reference for both performance and runtime.
+## Reference
 
-### 2. Hybrid Variational Quantum Classifier (VQC)
-
-A quantum feature map encodes the classical features. A trainable ansatz is optimized by a classical optimizer, and measurements drive predictions. The VQC tab displays the feature map, ansatz, optimization trace when available, metrics, and confusion matrix.
-
-### 3. Quantum Kernel + SVM
-
-The fidelity kernel computes similarity between encoded quantum states:
-
-    K(x_i, x_j) = |<phi(x_i)|phi(x_j)>|^2
-
-The train kernel matrix is consumed by a classical SVM using a precomputed kernel. Test-to-train similarities are computed separately. Kernel build time is reported separately from classical SVM fitting.
-
-## Experimental fairness
-
-- Identical stratified split and seed for every model within a run.
-- Feature selection and scaling are fitted only on training data.
-- Architecture study is a small exploratory sweep with additional simulator cost; it is not exhaustive optimization and results use the primary seed only.
-- Same retained features and qubit count for both quantum methods.
-- Held-out test metrics are separated from training, inference, and kernel-build time.
-- Repeated seeds can be summarized with mean and sample standard deviation.
-- Noisy mode uses a configured depolarizing channel in Qiskit Aer; it is a controlled simulation, not a calibrated device-noise model.
-- Never claim quantum advantage based on one small dataset or simulator result.
-
-## Deploy on Streamlit Community Cloud
-
-1. Push the repository to GitHub.
-2. Open Streamlit Community Cloud and create a new app.
-3. Select repository Abhisheksathwik/qiskit-team-kalki, branch main, and entry file app.py.
-4. Deploy using requirements.txt from the repository root.
-5. Begin with Two Moons, 2 qubits, one ansatz layer, and modest optimizer iterations.
-
-Quantum simulations can be computationally expensive, particularly for quantum kernels. Local results/history.json is not a durable database on ephemeral hosting, so download reports to retain results.
-
-## Limitations and future work
-
-- Simulator behaviour and costs differ from real quantum hardware.
-- Kernel matrix evaluation scales quadratically in sample count.
-- VQC optimization is sensitive to initialization, depth, optimizer, and sampling noise.
-- The Breast Cancer demo selects a compact feature subset using the training split.
-- Four-feature decision-boundary visualizations are two-dimensional slices.
-- Future work: noise models, optional IBM Quantum backend integration, more datasets, broader seed sweeps, and automated feature-map/ansatz comparisons.
-
-## References
-
-- Qiskit Machine Learning documentation: https://qiskit-community.github.io/qiskit-machine-learning/
-- Qiskit Machine Learning release notes: https://qiskit-community.github.io/qiskit-machine-learning/release_notes.html
-- Streamlit documentation: https://docs.streamlit.io/
-- Schuld & Killoran, Quantum machine learning in feature Hilbert spaces, Physical Review Letters 122 (2019).
-- McClean et al., Barren plateaus in quantum neural network training landscapes, Nature Communications 9 (2018).
+Qiskit Fall Fest 2026 — Phase 1 Master Guide, SRM University-AP, pages 1–7. Submission portal listed by the guide: https://qffsrmap2026.com/learning/hackathon.

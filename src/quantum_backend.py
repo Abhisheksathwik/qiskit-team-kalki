@@ -17,12 +17,12 @@ def suppress_aer_compatibility_warnings():
         yield
 
 
-def build_sampler(*, shots: int = 1024, seed: int = 42, noise_strength: float = 0.0):
-    """Create a seeded V2 sampler, optionally adding depolarizing gate noise.
+def build_sampler(*, shots: int = 1024, seed: int = 42, noise_strength: float = 0.0, processor_config=None):
+    """Create a seeded V2 sampler for the existing models.
 
-    noise_strength is the depolarizing probability for each configured one-qubit gate.
-    The two-qubit depolarizing probability is twice that value. Zero means an ideal
-    shot-based simulator (sampling noise still remains when shots are finite).
+    With processor_config, SamplerV2 receives that processor's coupling map,
+    required native basis and the official Phase 1 gate/readout noise. Otherwise
+    the original ideal or noise_strength-controlled behaviour is unchanged.
     """
     from qiskit_aer.primitives import SamplerV2
 
@@ -32,7 +32,10 @@ def build_sampler(*, shots: int = 1024, seed: int = 42, noise_strength: float = 
         raise ValueError("noise_strength must be between 0 and 0.05")
 
     options = None
-    if noise_strength > 0:
+    if processor_config is not None:
+        from src.processors import sampler_backend_options
+        options = {"backend_options": sampler_backend_options(processor_config)}
+    elif noise_strength > 0:
         from qiskit_aer.noise import NoiseModel, depolarizing_error
 
         noise_model = NoiseModel()

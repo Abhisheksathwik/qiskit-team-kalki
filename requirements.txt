@@ -1,14 +1,17 @@
-# Python 3.11 is recommended for the Qiskit simulator stack.
-qiskit>=1.2,<2.0
-qiskit-aer>=0.15,<0.17
-qiskit-machine-learning>=0.8,<0.9
-qiskit-algorithms>=0.3,<0.4
-numpy>=1.26,<2.0
-scipy>=1.11,<2.0
-pandas>=2.1,<3.0
-scikit-learn>=1.4,<1.7
-matplotlib>=3.8,<4.0
-seaborn>=0.13,<1.0
-streamlit>=1.35,<2.0
-tabulate>=0.9,<1.0
-pytest>=8.0,<9.0
+# Python 3.11 is the tested runtime for the QFF Phase 1 submission.
+# Exact direct-dependency pins make notebook and simulator runs reproducible.
+qiskit==1.4.6
+qiskit-aer==0.16.4
+qiskit-machine-learning==0.8.2
+qiskit-algorithms==0.3.1
+numpy==1.26.4
+scipy==1.17.1
+pandas==2.3.3
+scikit-learn==1.6.1
+matplotlib==3.11.2
+seaborn==0.13.2
+streamlit==1.65.0
+tabulate==0.10.0
+networkx==3.5
+ipykernel==6.29.5
+pytest==8.4.2

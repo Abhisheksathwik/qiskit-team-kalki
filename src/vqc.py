@@ -12,6 +12,7 @@ def train_vqc(
     X_train_q, y_train, X_test_q, *, maxiter=40, reps=1,
     optimizer_name="COBYLA", shots=1024, seed=42, noise_strength=0.0,
     feature_map_name="ZZ entangling", ansatz_name="Real Amplitudes",
+    processor_config=None,
 ):
     from qiskit_machine_learning.algorithms import VQC
     from qiskit_machine_learning.optimizers import COBYLA, SPSA
@@ -33,7 +34,10 @@ def train_vqc(
         raise ValueError("optimizer_name must be COBYLA or SPSA")
 
     with suppress_aer_compatibility_warnings():
-        sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
+        sampler = build_sampler(
+            shots=int(shots), seed=int(seed), noise_strength=float(noise_strength),
+            processor_config=processor_config,
+        )
         model = VQC(
             sampler=sampler,
             feature_map=feature_map,
@@ -61,6 +65,7 @@ def train_vqc(
         "reps": int(reps),
         "optimizer": optimizer_key,
         "noise_strength": float(noise_strength),
+        "processor_name": processor_config.get("name") if isinstance(processor_config, dict) else None,
         "feature_map_name": feature_map_name,
         "ansatz_name": ansatz_name,
     }

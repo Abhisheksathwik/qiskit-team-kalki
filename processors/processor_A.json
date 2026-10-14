@@ -1,0 +1,15 @@
+{
+  "name": "Processor A",
+  "processor_id": "A",
+  "num_qubits": 5,
+  "design_rationale": "A compact five-node ring with one branch. The short cycle provides alternative routes for several pairs while qubit 4 is attached to qubit 2, creating a deliberately non-linear baseline for studying routing.",
+  "coupling_edges": [[0, 1], [1, 2], [2, 3], [3, 0], [2, 4]],
+  "basis_gates": ["rz", "sx", "x", "cx"],
+  "transpilation": {"optimization_level": 1, "seed_transpiler": 42},
+  "shots": 4096,
+  "noise": {
+    "one_qubit_depolarizing_probability": 0.001,
+    "cx_depolarizing_probability": 0.005,
+    "readout_error_probability": 0.01
+  }
+}

@@ -91,3 +91,44 @@ def training_time_chart(timings):
     ax.grid(axis="y", alpha=0.2)
     fig.tight_layout()
     return fig
+
+
+def plot_coupling_graphs(processor_configs):
+    """Plot both participant-defined connectivity graphs with physical qubit labels."""
+    import networkx as nx
+
+    count = max(1, len(processor_configs))
+    fig, axes = plt.subplots(1, count, figsize=(6 * count, 4.6), squeeze=False)
+    for ax, config in zip(axes[0], processor_configs):
+        graph = nx.Graph()
+        graph.add_nodes_from(range(int(config["num_qubits"])))
+        graph.add_edges_from([tuple(edge) for edge in config["coupling_edges"]])
+        positions = nx.spring_layout(graph, seed=42)
+        nx.draw_networkx(graph, pos=positions, ax=ax, with_labels=True, node_size=700, font_size=9)
+        ax.set_title(f"{config['name']} coupling map ({config['num_qubits']} qubits, {len(config['coupling_edges'])} edges)")
+        ax.axis("off")
+    fig.tight_layout()
+    return fig
+
+
+def plot_architecture_comparison(rows):
+    """Plot measured VQC accuracy and transpiled costs for Processor A and B."""
+    fields = [
+        ("Accuracy", "Held-out VQC accuracy"),
+        ("Compiled Circuit Depth", "Compiled circuit depth"),
+        ("Compiled CX Count", "Compiled CX count"),
+        ("SWAP Routing Count", "Explicit routing SWAP count"),
+    ]
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
+    successful = [row for row in rows if row.get("Status") == "ok"]
+    for ax, (field, title) in zip(axes.flat, fields):
+        labels = [row.get("Processor", "") for row in successful if row.get(field) is not None]
+        values = [float(row[field]) for row in successful if row.get(field) is not None]
+        if values:
+            ax.bar(labels, values)
+        else:
+            ax.text(0.5, 0.5, "No successful measurements", ha="center", va="center", transform=ax.transAxes)
+        ax.set_title(title)
+        ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    return fig
