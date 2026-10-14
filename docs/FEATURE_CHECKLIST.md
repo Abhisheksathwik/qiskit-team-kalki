@@ -21,6 +21,9 @@ This checklist maps the QuantumClassify Lab presentation brief to repository fea
 - [x] Bounded sample sizes to keep simulator experiments appropriate for a demo.
 - [x] Independent shot controls for VQC and quantum kernel.
 - [x] Ideal and configurable Aer depolarizing-noise simulation for both quantum models; noise setting is recorded in reports.
+- [x] Selectable Z-only and ZZ-entangling feature maps shared consistently between VQC and quantum-kernel paths.
+- [x] Selectable Real Amplitudes and Efficient SU(2) VQC ansatz designs.
+- [x] Optional bounded architecture study comparing selected feature-map and ansatz combinations on the same primary-seed split.
 - [x] Local automated tests and GitHub Actions compile/test checks.
 - [x] Installation, testing, architecture, and deployment instructions.
 
@@ -40,7 +43,7 @@ These are extension items described in the presentation as future work or option
 - [ ] Hardware-aware transpilation and backend-specific validation.
 
 - [ ] Automated sweeps across noise strengths and statistical comparison against ideal simulation.
-- [ ] Automated hyperparameter, feature-map, and ansatz sweeps.
+- [ ] Expanded automated hyperparameter sweeps across optimizer, circuit depth, shot count, and repeated seeds beyond the current bounded architecture study.
 - [ ] Persistent database or cloud object store for history on ephemeral hosting.
 - [ ] Publicly deployed Streamlit app (needs a deployment account and deployment action).
 - [ ] Large multi-dataset benchmark and statistical significance analysis.
