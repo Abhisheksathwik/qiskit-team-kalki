@@ -1,12 +1,17 @@
 """Fidelity quantum kernel classifier with a classical precomputed-kernel SVM."""
 from __future__ import annotations
+
 import time
 import numpy as np
 
 
-def train_quantum_kernel(X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=100):
-    from qiskit.circuit.library import ZZFeatureMap
+def train_quantum_kernel(
+    X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=100, shots=1024,
+):
+    from qiskit.circuit.library import zz_feature_map
+    from qiskit_aer.primitives import SamplerV2
     from qiskit_machine_learning.kernels import FidelityQuantumKernel
+    from qiskit_machine_learning.state_fidelities import ComputeUncompute
     from sklearn.svm import SVC
 
     if len(X_train_q) > max_train_samples:
@@ -16,9 +21,10 @@ def train_quantum_kernel(X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_t
         )
 
     n_qubits = int(X_train_q.shape[1])
-    feature_map = ZZFeatureMap(feature_dimension=n_qubits, reps=1, entanglement="linear")
-    # FidelityQuantumKernel uses state fidelity |<phi(x)|phi(y)>|^2.
-    kernel = FidelityQuantumKernel(feature_map=feature_map)
+    feature_map = zz_feature_map(feature_dimension=n_qubits, reps=1, entanglement="linear")
+    sampler = SamplerV2(default_shots=int(shots), seed=int(seed))
+    fidelity = ComputeUncompute(sampler=sampler)
+    kernel = FidelityQuantumKernel(feature_map=feature_map, fidelity=fidelity)
 
     start = time.perf_counter()
     K_train = np.asarray(kernel.evaluate(X_train_q), dtype=float)
@@ -46,4 +52,5 @@ def train_quantum_kernel(X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_t
         "feature_map": feature_map,
         "n_qubits": n_qubits,
         "reps": int(reps),
+        "shots": int(shots),
     }
