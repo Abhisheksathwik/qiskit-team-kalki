@@ -4,12 +4,14 @@ from __future__ import annotations
 import time
 import numpy as np
 
+from src.quantum_backend import build_sampler
+
 
 def train_quantum_kernel(
-    X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=105, shots=1024,
+    X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=105,
+    shots=1024, noise_strength=0.0,
 ):
     from qiskit.circuit.library import zz_feature_map
-    from qiskit_aer.primitives import SamplerV2
     from qiskit_machine_learning.kernels import FidelityQuantumKernel
     from qiskit_machine_learning.state_fidelities import ComputeUncompute
     from sklearn.svm import SVC
@@ -22,7 +24,7 @@ def train_quantum_kernel(
 
     n_qubits = int(X_train_q.shape[1])
     feature_map = zz_feature_map(feature_dimension=n_qubits, reps=1, entanglement="linear")
-    sampler = SamplerV2(default_shots=int(shots), seed=int(seed))
+    sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
     fidelity = ComputeUncompute(sampler=sampler)
     kernel = FidelityQuantumKernel(feature_map=feature_map, fidelity=fidelity)
 
@@ -53,4 +55,5 @@ def train_quantum_kernel(
         "n_qubits": n_qubits,
         "reps": int(reps),
         "shots": int(shots),
+        "noise_strength": float(noise_strength),
     }
