@@ -88,6 +88,49 @@ def _write_report(config: dict, model_rows: list[dict], architecture_rows: list[
         lines.append(
             f"| {row.get('Processor', '')} | {row.get('Physical Qubits', '')} | {row.get('Logical Circuit Depth', '')} | {row.get('Compiled Circuit Depth', '')} | {row.get('Logical CX Count', '')} | {row.get('Compiled CX Count', '')} | {row.get('SWAP Routing Count', '')} | {row.get('Routing CX Overhead', '')} | {show('Output-distribution Fidelity')} | {show('Accuracy', 4)} | {row.get('Status', '')} |"
         )
+    lines.extend(["", "## Observed trade-offs", ""])
+    by_processor = {row.get("Processor"): row for row in architecture_rows}
+    comparisons = [
+        ("Compiled Circuit Depth", "compiled circuit depth"),
+        ("Compiled CX Count", "compiled CX count"),
+        ("SWAP Routing Count", "explicit routing SWAP count"),
+        ("Routing CX Overhead", "routing CX overhead"),
+        ("Output-distribution Fidelity", "ideal/noisy output-distribution fidelity"),
+        ("Accuracy", "held-out VQC accuracy"),
+        ("F1 Score", "held-out VQC F1 score"),
+    ]
+    if all(name in by_processor for name in ("Processor A", "Processor B")):
+        a_row, b_row = by_processor["Processor A"], by_processor["Processor B"]
+        for key, label in comparisons:
+            a_value, b_value = a_row.get(key), b_row.get(key)
+            if a_value is None or b_value is None or pd.isna(a_value) or pd.isna(b_value):
+                continue
+            a_value, b_value = float(a_value), float(b_value)
+            delta = b_value - a_value
+            if abs(delta) < 1e-12:
+                lines.append(f"- Processor A and Processor B had the same measured {label} ({a_value:.4f}) for this configuration.")
+            else:
+                direction = "lower" if delta < 0 else "higher"
+                lines.append(f"- Processor B had {direction} {label} than Processor A ({a_value:.4f} on A; {b_value:.4f} on B). This is specific to this circuit, seed, and configuration.")
+    else:
+        lines.append("- A complete Processor A/B pair was not available in this run, so no comparative conclusion is drawn.")
+
+    ideal_vqc = next((row for row in model_rows
+                      if row.get("Model") == "Hybrid VQC" and row.get("Execution") == "Ideal simulator"
+                      and row.get("Status") == "ok"), None)
+    if ideal_vqc and ideal_vqc.get("Accuracy") is not None:
+        ideal_accuracy = float(ideal_vqc["Accuracy"])
+        for processor_name in ("Processor A", "Processor B"):
+            noisy_row = next((row for row in model_rows
+                              if row.get("Model") == "Hybrid VQC" and row.get("Execution") == processor_name
+                              and row.get("Status") == "ok"), None)
+            if noisy_row and noisy_row.get("Accuracy") is not None:
+                change = float(noisy_row["Accuracy"]) - ideal_accuracy
+                lines.append(
+                    f"- The {processor_name} VQC accuracy differed from the ideal-simulator VQC by {change:+.4f} "
+                    f"(ideal {ideal_accuracy:.4f}; {processor_name} {float(noisy_row['Accuracy']):.4f}). "
+                    "This reflects the complete training-and-inference pipeline under the chosen noise model, not an isolated post-training noise test."
+                )
     lines.extend([
         "",
         "## Interpretation guardrails",

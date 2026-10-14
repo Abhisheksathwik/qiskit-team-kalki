@@ -16,6 +16,10 @@ The official benchmark code and reproducible notebook are present. **No benchmar
 
 See `processors/processor_A.json` and `processors/processor_B.json` for exact edges and design rationale.
 
+## Architectural trade-off (design rationale, not a measured result)
+
+Processor A has five physical qubits and five coupling edges, giving a compact design with a four-node cycle and one attached branch. Processor B has nine physical qubits and twelve coupling edges, including three cross-links that introduce alternative routes. The design hypothesis is that Processor B may provide more routing choices for some interactions, while its larger physical register does not by itself guarantee lower depth, fewer CX gates, fewer SWAPs, better noisy accuracy, or higher output-distribution fidelity. The experiment must establish those outcomes from the actual compiled circuits and simulator runs.
+
 ## Measured outputs
 
 The benchmark writes `results/tables/model_comparison.csv`, `results/tables/processor_architecture_comparison.csv`, `results/tables/benchmark_summary.json`, and figures under `results/figures/`. The report is rewritten with the observations and results from the run. Do not present an unexecuted template as evidence or fill missing measurements with estimates.
