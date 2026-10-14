@@ -151,7 +151,7 @@ def _fit_seed(cfg, seed):
             from src.quantum_kernel import train_quantum_kernel
             result = train_quantum_kernel(
                 data.X_train_q, data.y_train, data.X_test_q, reps=1, seed=seed,
-                max_train_samples=100,
+                max_train_samples=105,
             )
             outputs["Quantum Kernel + SVM"] = {
                 **result,
@@ -289,6 +289,10 @@ with tabs[0]:
         st.dataframe(agg, use_container_width=True)
     else:
         st.dataframe(rows_frame[display_cols], use_container_width=True)
+
+    for failed_run in bundle["runs"]:
+        for failed_model, failure_reason in failed_run["failures"].items():
+            st.warning(f'Seed {failed_run["seed"]} · {failed_model} failed: {failure_reason}')
 
     st.pyplot(metrics_comparison(mean_metric_dict), use_container_width=True)
     st.pyplot(training_time_chart(training_means), use_container_width=True)
