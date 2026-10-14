@@ -1,0 +1,9 @@
+qiskit>=1.0
+qiskit-aer>=0.14
+qiskit-machine-learning>=0.8
+scikit-learn>=1.4
+numpy>=1.26
+pandas>=2.0
+matplotlib>=3.8
+seaborn>=0.13
+streamlit>=1.35
