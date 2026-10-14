@@ -15,6 +15,7 @@ An interactive research dashboard comparing a classical RBF Support Vector Machi
 - Adjustable VQC ansatz layers, optimizer, iteration count, shot count, seed, and repeated runs.
 - Accuracy, precision, recall, F1, confusion matrices, training time, inference time, and quantum-kernel build time.
 - Visuals: score comparison, confusion matrices, decision boundaries, VQC optimization loss, quantum-kernel fidelity heatmap, circuit diagrams, and training-time chart.
+- Ideal shot-based and optional depolarizing-noise simulation for both quantum pipelines, with independent VQC/kernel shot counts; results record the selected noise settings.
 - Evidence-based findings and a downloadable Markdown experiment report.
 - Detailed metrics CSV, saved history JSON, and session-cached experiment results.
 - GitHub Actions CI and automated tests.
@@ -112,6 +113,7 @@ The train kernel matrix is consumed by a classical SVM using a precomputed kerne
 - Same retained features and qubit count for both quantum methods.
 - Held-out test metrics are separated from training, inference, and kernel-build time.
 - Repeated seeds can be summarized with mean and sample standard deviation.
+- Noisy mode uses a configured depolarizing channel in Qiskit Aer; it is a controlled simulation, not a calibrated device-noise model.
 - Never claim quantum advantage based on one small dataset or simulator result.
 
 ## Deploy on Streamlit Community Cloud
