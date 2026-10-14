@@ -68,6 +68,17 @@ with st.sidebar:
     optimizer_name = st.selectbox("Classical optimizer", ["COBYLA", "SPSA"])
     optimizer_iterations = st.slider("Optimizer iterations", min_value=10, max_value=80, value=30, step=10)
     shots = st.select_slider("Measurement shots (VQC)", options=[256, 512, 1024, 2048], value=1024)
+    kernel_shots = st.select_slider("Measurement shots (quantum kernel)", options=[256, 512, 1024, 2048], value=1024)
+    noise_mode = st.selectbox(
+        "Quantum simulation mode",
+        ["Ideal shot-based (0% gate noise)", "Noisy (0.5% 1-qubit gate error)", "Noisy (1.0% 1-qubit gate error)"],
+        help="Noisy mode applies depolarizing errors to supported one- and two-qubit gates in both quantum models."
+    )
+    noise_strength = {
+        "Ideal shot-based (0% gate noise)": 0.0,
+        "Noisy (0.5% 1-qubit gate error)": 0.005,
+        "Noisy (1.0% 1-qubit gate error)": 0.01,
+    }[noise_mode]
     base_seed = st.number_input("Random seed", min_value=0, max_value=99999, value=42, step=1)
     repeats = st.selectbox("Independent seed runs", [1, 3], index=0, help="Three runs report mean and standard deviation but can take considerably longer.")
     st.markdown("---")
@@ -87,6 +98,9 @@ CONFIG = {
     "optimizer": optimizer_name,
     "optimizer_iterations": int(optimizer_iterations),
     "shots": int(shots),
+    "kernel_shots": int(kernel_shots),
+    "noise_mode": noise_mode,
+    "noise_strength": float(noise_strength),
     "seed": int(base_seed),
     "repeats": int(repeats),
     "models": {
@@ -107,6 +121,10 @@ def _jsonable_row(model_name, metrics, model_result, run_seed, cfg):
         row["Kernel Build Time (s)"] = float(model_result["kernel_build_seconds"])
     else:
         row["Kernel Build Time (s)"] = 0.0
+    if "shots" in model_result:
+        row["Shots"] = int(model_result["shots"])
+    if "noise_strength" in model_result:
+        row["Depolarizing Noise (1q)"] = float(model_result["noise_strength"])
     return row
 
 
@@ -138,6 +156,7 @@ def _fit_seed(cfg, seed):
                 data.X_train_q, data.y_train, data.X_test_q,
                 maxiter=cfg["optimizer_iterations"], reps=cfg["vqc_layers"],
                 optimizer_name=cfg["optimizer"], shots=cfg["shots"], seed=seed,
+                noise_strength=cfg["noise_strength"],
             )
             outputs["Hybrid VQC"] = {
                 **result,
@@ -151,7 +170,8 @@ def _fit_seed(cfg, seed):
             from src.quantum_kernel import train_quantum_kernel
             result = train_quantum_kernel(
                 data.X_train_q, data.y_train, data.X_test_q, reps=1, seed=seed,
-                max_train_samples=105,
+                max_train_samples=105, shots=cfg["kernel_shots"],
+                noise_strength=cfg["noise_strength"],
             )
             outputs["Quantum Kernel + SVM"] = {
                 **result,
@@ -282,6 +302,7 @@ with tabs[0]:
     m2.metric("Train samples", data.train_size)
     m3.metric("Test samples", data.test_count)
     m4.metric("Qubits", data.n_qubits)
+    st.caption(f'Quantum simulation: {bundle["config"]["noise_mode"]} · VQC shots {bundle["config"]["shots"]} · kernel shots {bundle["config"]["kernel_shots"]}')
     display_cols = ["Model", "Accuracy", "Precision", "Recall", "F1 Score", "Training Time (s)", "Inference Time (s)", "Kernel Build Time (s)"]
     # Display means and standard deviations when the repeat option is enabled.
     if bundle["config"]["repeats"] > 1:
@@ -322,7 +343,13 @@ with tabs[0]:
                 from sklearn.svm import SVC
                 qmodel = model_result["model"]
                 from qiskit_machine_learning.kernels import FidelityQuantumKernel
-                kernel = FidelityQuantumKernel(feature_map=model_result["feature_map"])
+                from qiskit_machine_learning.state_fidelities import ComputeUncompute
+                from src.quantum_backend import build_sampler
+                fidelity = ComputeUncompute(sampler=build_sampler(
+                    shots=model_result["shots"], seed=data.seed,
+                    noise_strength=model_result["noise_strength"],
+                ))
+                kernel = FidelityQuantumKernel(feature_map=model_result["feature_map"], fidelity=fidelity)
                 support_indices = qmodel.support_
                 K_grid_support = kernel.evaluate(angle_grid, data.X_train_q[support_indices])
                 decision = K_grid_support @ qmodel.dual_coef_[0] + qmodel.intercept_[0]
