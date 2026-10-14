@@ -34,6 +34,12 @@ def build_insights(models, data):
         insights.append("VQC runtime includes parameter optimization and simulator circuit evaluations; it is not directly comparable to a hardware runtime.")
     if qk:
         insights.append(f'Quantum-kernel construction took {qk.get("kernel_build_seconds", 0.0):.3f} seconds and is reported separately from SVM fitting.')
+    noise_levels = [float(result.get("noise_strength", 0.0)) for result in models.values()]
+    noise_level = max(noise_levels, default=0.0)
+    if noise_level > 0:
+        insights.append(f"The quantum pipelines used an Aer depolarizing-noise simulation with one-qubit gate probability {noise_level:.3%}; this models selected gate errors, not a calibrated hardware device.")
+    else:
+        insights.append("The quantum pipelines used an ideal shot-based simulator; finite-shot sampling still applies.")
     insights.append("These measurements describe this dataset and configuration; they do not establish practical quantum advantage.")
     return insights
 
@@ -55,6 +61,9 @@ def build_markdown_report(bundle, rows_frame, insights):
         f'- Optimizer: {config["optimizer"]}',
         f'- Optimizer iterations: {config["optimizer_iterations"]}',
         f'- VQC shots: {config["shots"]}',
+        f'- Quantum kernel shots: {config.get("kernel_shots", "not configured")}',
+        f'- Simulation mode: {config.get("noise_mode", "not configured")}',
+        f'- Depolarizing noise probability (one-qubit gates): {float(config.get("noise_strength", 0.0)):.3%}',
         f'- Seeds: {", ".join(str(run["seed"]) for run in bundle["runs"])}',
         "",
         "## Results",
