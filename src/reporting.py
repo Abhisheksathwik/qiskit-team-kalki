@@ -64,6 +64,9 @@ def build_markdown_report(bundle, rows_frame, insights):
         f'- Quantum kernel shots: {config.get("kernel_shots", "not configured")}',
         f'- Simulation mode: {config.get("noise_mode", "not configured")}',
         f'- Depolarizing noise probability (one-qubit gates): {float(config.get("noise_strength", 0.0)):.3%}',
+        f'- Feature map: {config.get("feature_map", "ZZ entangling")}',
+        f'- VQC ansatz: {config.get("ansatz", "Real Amplitudes")}',
+        f'- Architecture study enabled: {config.get("architecture_sweep", False)}',
         f'- Seeds: {", ".join(str(run["seed"]) for run in bundle["runs"])}',
         "",
         "## Results",
@@ -83,6 +86,21 @@ def build_markdown_report(bundle, rows_frame, insights):
             lines.append("| " + " | ".join(cells) + " |")
     lines.extend(["", "## Evidence-based observations", ""])
     lines.extend([f"- {sentence}" for sentence in insights])
+    sweep_rows = bundle.get("architecture_sweep", [])
+    if sweep_rows:
+        lines.extend(["", "## Architecture study", ""])
+        lines.append("The optional architecture study uses the primary seed's fixed train/test split. It is a small exploratory comparison, not exhaustive hyperparameter tuning.")
+        successful_sweep = [row for row in sweep_rows if row.get("Status") == "ok"]
+        if successful_sweep:
+            columns_sweep = ["Configuration", "Accuracy", "F1 Score", "Training Time (s)", "Inference Time (s)"]
+            lines.append("| " + " | ".join(columns_sweep) + " |")
+            lines.append("| " + " | ".join(["---"] * len(columns_sweep)) + " |")
+            for row in sorted(successful_sweep, key=lambda item: item.get("F1 Score", 0.0), reverse=True):
+                values = [row.get("Configuration", "")] + [f'{float(row.get(key) or 0.0):.4f}' for key in columns_sweep[1:]]
+                lines.append("| " + " | ".join(values) + " |")
+        failures = [row for row in sweep_rows if row.get("Status") != "ok"]
+        for row in failures:
+            lines.append(f'- Failed candidate {row.get("Configuration")}: {row.get("Error", "unknown error")}')
     lines.extend([
         "",
         "## Fairness and limitations",
