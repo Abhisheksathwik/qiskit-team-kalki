@@ -12,7 +12,8 @@ An interactive research dashboard comparing a classical RBF Support Vector Machi
 - Compact 2- and 4-feature / qubit experiments.
 - Leakage-safe scaling and training-fitted feature selection.
 - Three separate pipelines: classical RBF SVM, trainable VQC, and quantum kernel + classical SVM.
-- Adjustable VQC ansatz layers, optimizer, iteration count, shot count, seed, and repeated runs.
+- Adjustable VQC ansatz layers and design, quantum feature map, optimizer, iteration count, independent shot counts, ideal/noisy simulator mode, seed, and repeated runs.
+- Optional architecture study across Z-only / ZZ-entangling feature maps and Real Amplitudes / Efficient SU(2) ansatz designs, evaluated on a fixed primary-seed split.
 - Accuracy, precision, recall, F1, confusion matrices, training time, inference time, and quantum-kernel build time.
 - Visuals: score comparison, confusion matrices, decision boundaries, VQC optimization loss, quantum-kernel fidelity heatmap, circuit diagrams, and training-time chart.
 - Ideal shot-based and optional depolarizing-noise simulation for both quantum pipelines, with independent VQC/kernel shot counts; results record the selected noise settings.
@@ -110,6 +111,7 @@ The train kernel matrix is consumed by a classical SVM using a precomputed kerne
 
 - Identical stratified split and seed for every model within a run.
 - Feature selection and scaling are fitted only on training data.
+- Architecture study is a small exploratory sweep with additional simulator cost; it is not exhaustive optimization and results use the primary seed only.
 - Same retained features and qubit count for both quantum methods.
 - Held-out test metrics are separated from training, inference, and kernel-build time.
 - Repeated seeds can be summarized with mean and sample standard deviation.
