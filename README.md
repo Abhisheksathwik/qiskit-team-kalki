@@ -1,39 +1,64 @@
-QuantumClassify Lab
+# ⚛️ QuantumClassify Lab
 
-Hybrid Variational Quantum Classifiers vs. Quantum Kernel Learning
-An interactive Quantum Machine Learning experimentation platform 
+## Qiskit Fall Fest — Quantum Machine Learning Project
 
-Overview:
+QuantumClassify Lab is an interactive platform for comparing classical machine learning with two Quantum Machine Learning approaches on the same classification task.
 
-QuantumClassify Lab is an interactive application for exploring and comparing classical machine learning with two quantum machine learning approaches:
-Hybrid Variational Quantum Classifier (VQC) — a trainable quantum circuit optimized using a classical optimization algorithm.
+### Models
 
-Quantum Kernel Classifier — a quantum feature map combined with a classical Support Vector Machine.
-Classical baseline — a conventional RBF-kernel Support Vector Machine.
+1. **Classical RBF SVM** — baseline model.
+2. **Hybrid Variational Quantum Classifier (VQC)** — parameterized quantum circuit optimized by a classical optimizer.
+3. **Quantum Kernel + SVM** — quantum feature-space similarity used by a classical SVM.
 
-The application allows users to configure experiments, visualize quantum circuits, inspect quantum kernel matrices, compare classification metrics, and investigate the computational cost of each approach.
+### Architecture
 
-The objective is not to assume that quantum machine learning is superior, but to evaluate its behavior through controlled and reproducible experiments.
-Problem Statement
+```text
+Dataset → Preprocessing → ┌─ Classical SVM ─────┐
+                          ├─ Hybrid VQC ────────┤ → Evaluation → Dashboard
+                          └─ Quantum Kernel+SVM ┘
+```
 
-Classical machine learning algorithms can perform well on many classification tasks. Quantum machine learning explores whether quantum state representations and parameterized quantum circuits can provide useful alternatives for particular learning problems.
+### Dashboard features
 
-However, quantum approaches also introduce challenges, including circuit execution cost, optimization difficulty, measurement noise, and hardware limitations.
+- Two Moons and Breast Cancer datasets
+- Configurable samples, test split and VQC optimizer iterations
+- Accuracy, precision, recall and F1
+- Training-time comparison
+- Decision-boundary plots
+- VQC feature-map and ansatz circuit display
+- VQC training-loss curve
+- Quantum-kernel similarity heatmap
+- CSV experiment export
 
-This project investigates:
+### Installation
 
-How does a hybrid variational quantum classifier perform against a classical SVM?
-How does quantum kernel learning compare with a trainable quantum classifier?
-How do circuit depth, dataset size, and optimizer settings affect performance?
-What trade-offs exist between predictive performance and computational cost?
+```bash
+python -m venv .venv
+```
 
-Objectives
+Windows PowerShell:
 
-Implement a working VQC using Qiskit Machine Learning.
-Implement a fidelity-based quantum kernel classifier.
-Establish a fair classical ML baseline.
-Evaluate models using held-out test data.
-Visualize decision boundaries, training behavior, and kernel matrices.
-Build an interactive Streamlit dashboard.
+```powershell
+.venv\Scripts\Activate.ps1
+```
 
-Produce reproducible experiments and an automatically generated comparison report.
+Ubuntu/WSL:
+
+```bash
+source .venv/bin/activate
+```
+
+Install and run:
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+### Demo flow
+
+Start with **Two Moons**, run all three models, compare the metrics, inspect the VQC circuit and loss curve, then show the quantum-kernel heatmap.
+
+### Research note
+
+This project is an experimental comparison. A higher score on one small dataset does not prove quantum advantage. The presentation should report actual measured results and discuss simulator cost, circuit depth, optimization difficulty, finite-shot effects and hardware noise.
