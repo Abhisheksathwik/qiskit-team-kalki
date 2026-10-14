@@ -4,13 +4,14 @@ from __future__ import annotations
 import time
 import numpy as np
 
+from src.quantum_backend import build_sampler
+
 
 def train_vqc(
     X_train_q, y_train, X_test_q, *, maxiter=40, reps=1,
-    optimizer_name="COBYLA", shots=1024, seed=42,
+    optimizer_name="COBYLA", shots=1024, seed=42, noise_strength=0.0,
 ):
     from qiskit.circuit.library import real_amplitudes, zz_feature_map
-    from qiskit_aer.primitives import SamplerV2
     from qiskit_machine_learning.algorithms import VQC
     from qiskit_machine_learning.optimizers import COBYLA, SPSA
 
@@ -32,7 +33,7 @@ def train_vqc(
     else:
         raise ValueError("optimizer_name must be COBYLA or SPSA")
 
-    sampler = SamplerV2(default_shots=int(shots), seed=int(seed))
+    sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
     model = VQC(
         sampler=sampler,
         feature_map=feature_map,
@@ -60,4 +61,5 @@ def train_vqc(
         "n_qubits": n_qubits,
         "reps": int(reps),
         "optimizer": optimizer_key,
+        "noise_strength": float(noise_strength),
     }
