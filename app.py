@@ -326,9 +326,11 @@ with tabs[0]:
             return _predict
         with column:
             try:
+                # Quantum-kernel boundary evaluation is expensive; use a coarser grid for this view.
+                resolution = 22 if name == "Quantum Kernel + SVM" else 70
                 st.pyplot(decision_boundary(
                     make_predictor(name, result), data.X_train, data.y_train,
-                    data.X_test, data.y_test, name
+                    data.X_test, data.y_test, name, resolution=resolution
                 ), use_container_width=True)
             except Exception as exc:
                 st.warning(f"Could not draw {name} boundary: {type(exc).__name__}: {exc}")
