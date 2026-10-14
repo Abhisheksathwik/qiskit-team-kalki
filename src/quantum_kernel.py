@@ -4,14 +4,14 @@ from __future__ import annotations
 import time
 import numpy as np
 
+from src.circuits import build_feature_map
 from src.quantum_backend import build_sampler, suppress_aer_compatibility_warnings
 
 
 def train_quantum_kernel(
     X_train_q, y_train, X_test_q, *, reps=1, seed=42, max_train_samples=105,
-    shots=1024, noise_strength=0.0,
+    shots=1024, noise_strength=0.0, feature_map_name="ZZ entangling",
 ):
-    from qiskit.circuit.library import zz_feature_map
     from qiskit_machine_learning.kernels import FidelityQuantumKernel
     from qiskit_machine_learning.state_fidelities import ComputeUncompute
     from sklearn.svm import SVC
@@ -23,7 +23,8 @@ def train_quantum_kernel(
         )
 
     n_qubits = int(X_train_q.shape[1])
-    feature_map = zz_feature_map(feature_dimension=n_qubits, reps=1, entanglement="linear")
+    feature_map = build_feature_map(n_qubits, feature_map_name)
+
     with suppress_aer_compatibility_warnings():
         sampler = build_sampler(shots=int(shots), seed=int(seed), noise_strength=float(noise_strength))
         fidelity = ComputeUncompute(sampler=sampler)
@@ -57,4 +58,5 @@ def train_quantum_kernel(
         "reps": int(reps),
         "shots": int(shots),
         "noise_strength": float(noise_strength),
+        "feature_map_name": feature_map_name,
     }
