@@ -1,5 +1,6 @@
-"""Hybrid Variational Quantum Classifier (VQC)."""
+"""Hybrid Variational Quantum Classifier using V2 sampler primitives."""
 from __future__ import annotations
+
 import time
 import numpy as np
 
@@ -8,30 +9,30 @@ def train_vqc(
     X_train_q, y_train, X_test_q, *, maxiter=40, reps=1,
     optimizer_name="COBYLA", shots=1024, seed=42,
 ):
-    from qiskit.circuit.library import RealAmplitudes, ZZFeatureMap
-    from qiskit_aer.primitives import Sampler
+    from qiskit.circuit.library import real_amplitudes, zz_feature_map
+    from qiskit_aer.primitives import SamplerV2
     from qiskit_machine_learning.algorithms import VQC
     from qiskit_machine_learning.optimizers import COBYLA, SPSA
 
     n_qubits = int(X_train_q.shape[1])
     if n_qubits not in (2, 4):
         raise ValueError("VQC currently supports 2 or 4 qubits")
-    feature_map = ZZFeatureMap(feature_dimension=n_qubits, reps=1, entanglement="linear")
-    ansatz = RealAmplitudes(num_qubits=n_qubits, reps=int(reps), entanglement="linear")
+    feature_map = zz_feature_map(feature_dimension=n_qubits, reps=1, entanglement="linear")
+    ansatz = real_amplitudes(num_qubits=n_qubits, reps=int(reps), entanglement="linear")
     history = []
 
     def callback(weights, objective_value):
         history.append(float(objective_value))
 
-    if optimizer_name.upper() == "SPSA":
+    optimizer_key = optimizer_name.upper()
+    if optimizer_key == "SPSA":
         optimizer = SPSA(maxiter=int(maxiter), learning_rate=0.05, perturbation=0.1)
-    else:
+    elif optimizer_key == "COBYLA":
         optimizer = COBYLA(maxiter=int(maxiter))
+    else:
+        raise ValueError("optimizer_name must be COBYLA or SPSA")
 
-    sampler = Sampler(
-        run_options={"shots": int(shots)},
-        backend_options={"seed_simulator": int(seed)},
-    )
+    sampler = SamplerV2(default_shots=int(shots), seed=int(seed))
     model = VQC(
         sampler=sampler,
         feature_map=feature_map,
@@ -58,5 +59,5 @@ def train_vqc(
         "shots": int(shots),
         "n_qubits": n_qubits,
         "reps": int(reps),
-        "optimizer": optimizer_name.upper(),
+        "optimizer": optimizer_key,
     }
